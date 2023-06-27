@@ -1,0 +1,38 @@
+name: cron
+
+on:
+  workflow_dispatch:
+  
+  schedule:
+    - cron: '30 12 * * *'
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+          
+      - run: |
+          pip install discord.py
+          pip install requests
+          pip install boto3
+        
+      - run: |
+          mkdir -m 777 tmp
+          touch ./tmp/data.csv
+          chmod 777 ./tmp/data.csv
+          
+      - run: python main.py
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          APEX_API_KEY: ${{ secrets.APEX_API_KEY }}
+          USER_ID_LIST: ${{ secrets.USER_ID_LIST }}
+          BUCKET_NAME:  ${{ secrets.BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:  ${{ secrets.AWS_DEFAULT_REGION }}
