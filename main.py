@@ -5,7 +5,7 @@ import datetime
 import requests
 import boto3
 import csv
-
+import json
 
 class Message():
     def __init__(self,title,description):
@@ -36,6 +36,33 @@ class apexApi():
         self.rank    = self.resJson['data']['segments'][0]['stats']['rankScore']['metadata']['rankName']
         self.rp      = self.resJson['data']['segments'][0]['stats']['rankScore']['displayValue']
         self.rpvalue = int(self.resJson['data']['segments'][0]['stats']['rankScore']['value'])
+
+class apexApi2():
+    def __init__(self):
+        self.base_url = "https://api.mozambiquehe.re/bridge"
+        
+        API_KEY = os.environ['APEX_API_KEY']
+        self.headers = {"Authorization":API_KEY}
+
+        self.level   = None
+        self.rank    = None
+        self.rp      = None
+        self.rpvalue = None
+
+    def getProfile(self,platform,uid):
+        url = self.base_url
+        info = {'player':uid, 'platform':platform}
+        self.res = requests.get(url, headers=self.headers, params=info)
+        self.res.raise_for_status()
+        self.resJson = self.res.json()
+        self.result()
+        return self.res.status_code
+
+    def result(self):
+        self.level   = self.resJson['global']['level']
+        self.rank    = str(self.resJson['global']['rank']['rankName']) + ' ' + str(self.resJson['global']['rank']['rankDiv'])
+        self.rp      = self.resJson['global']['rank']['rankScore']
+        self.rpvalue = int(self.resJson['global']['rank']['rankScore'])
 
 class dataControler_aws():
     def __init__(self):
@@ -72,7 +99,6 @@ def main():
     embed = Message("",dt.strftime("%Y/%m/%d %a %H:%M:%S"))
 
     datalist = []
-    stats = apexApi()
 
     dataControler = dataControler_aws()
     dataControler.readCsv()
@@ -80,10 +106,11 @@ def main():
     for dict in list(dataControler.Csvdict_S3):
         userid = dict['Username']
 
-        stats.getProfile(platform="origin",userid=userid)
+        stats = apexApi2()
 
         try:
-            diffrp = '{:+d}'.format(stats.rpvalue - int(float(dict['RP'])))
+            if stats.getProfile(platform="PC",uid=userid) == 200:
+                diffrp = '{:+d}'.format(stats.rpvalue - int(float(dict['RP'])))
         except Exception as e:
             print('Exception')
             print(e.args)
@@ -92,7 +119,7 @@ def main():
         datalist.append({'username': userid, 'level': stats.level, 'rank': stats.rank, 'rp': stats.rpvalue, 'diffrp': diffrp})
 
     for i in range(len(datalist)):
-        embed.setProfilestring(datalist[i]['level'],datalist[i]['rank'],str(datalist[i]['rp']),str(datalist[i]['diffrp']))
+        embed.setProfilestring(str(datalist[i]['level']),str(datalist[i]['rank']),str(datalist[i]['rp']),str(datalist[i]['diffrp']))
         embed.addField(datalist[i]['username'],embed.profile)
 
     dataControler.savelocalCsv(datalist)
