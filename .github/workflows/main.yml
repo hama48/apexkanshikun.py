@@ -30,7 +30,7 @@ jobs:
       - run: python main.py
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          APEX_API_KEY: ${{ secrets.APEX_API_KEY }}
+          APEX_API_KEY: ${{ secrets.APEX_API_KEY_ALS }}
           USER_ID_LIST: ${{ secrets.USER_ID_LIST }}
           BUCKET_NAME:  ${{ secrets.BUCKET_NAME }}
           AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
